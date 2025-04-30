@@ -1,0 +1,64 @@
+import speech_recognition as sr
+import pyttsx3
+import requests
+
+# === Text-to-speech ===
+engine = pyttsx3.init()
+def speak(text):
+    print("Bot:", text)
+    engine.say(text)
+    engine.runAndWait()
+
+# === Speech recognition ===
+def listen():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("🎤 Listening...")
+        audio = recognizer.listen(source)
+    try:
+        text = recognizer.recognize_google(audio)
+        print("You said:", text)
+        return text
+    except sr.UnknownValueError:
+        speak("Sorry, could not understand.")
+        return None
+    except sr.RequestError:
+        speak("Speech service unavailable.")
+        return None
+
+# === Send to Google Sheet via Webhook ===
+def send_to_sheet(name, email, message):
+    url = "https://script.google.com/macros/s/AKfycbxfu7J7SBP5D_JJQEt_h2xOM8REahcJQFD0NuASJ0vTY6rfu3mFsV_sNMXBKcQLTgi9/exec"  # Paste the Web App URL you deployed
+    data = {
+        "name": name,
+        "email": email,
+        "message": message
+    }
+    response = requests.post(url, data=data)
+    print("Response:", response.text)
+    if "Success" in response.text:
+        speak("Data added to Google Sheet successfully.")
+    else:
+        speak("There was a problem saving the data.")
+
+# === Main ===
+def main():
+    speak("Welcome to the voice data entry system.")
+   
+    speak("Please say your name.")
+    name = listen()
+    if not name: return
+
+    speak("Please say your email.")
+    email = listen()
+    if not email: return
+
+    speak("Please say your message.")
+    message = listen()
+    if not message: return
+
+    send_to_sheet(name, email, message)
+
+# === Run ===
+if __name__ == "__main__":
+    main()
